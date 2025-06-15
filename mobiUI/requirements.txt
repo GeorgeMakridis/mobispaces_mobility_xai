@@ -1,0 +1,17 @@
+protobuf==3.20.*
+streamlit==1.8.0  # Example version, ensure compatibility with your setup
+pydeck==0.7.0     # Example version
+altair==4.1.0     # Ensure this line is added; adjust the version as needed
+requests==2.25.1
+holoviews
+haversine
+Werkzeug>=2.0.1
+Jinja2>=3.0.1
+xgboost==2.0.2
+lime==0.2.0.1
+pandas
+numpy
+scikit-learn==0.24.2
+click==8.0.1      # Adjust based on compatibility
+haversine
+Flask>=2.0.1

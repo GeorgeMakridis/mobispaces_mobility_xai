@@ -1,0 +1,16 @@
+version: '3'
+
+services:
+
+  mobi-flp-bench:
+    container_name: mobi-flp-bench
+    build:
+      context: ./ #if your Dockerfile is not at the same level change the path here (./frontend)
+      dockerfile: Dockerfile
+    restart: always
+    environment:
+      - HOST_CONNECTOR=http://192.168.1.8
+      - PORT_CONNECTOR=8081
+    command: gunicorn --bind 0.0.0.0:8880 --workers=5 "app:run_app()"
+    ports:
+      - "8880:8880"

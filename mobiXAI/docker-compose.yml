@@ -1,0 +1,18 @@
+version: '3'
+
+services:
+
+  mobi-mobility-xai:
+    container_name: mobi-mobility-xai
+    build:
+      context: ./ #if your Dockerfile is not at the same level change the path here (./frontend)
+      dockerfile: Dockerfile
+    restart: always
+    environment:
+      - HOST_CONNECTOR=http://192.168.1.8
+      - PORT_CONNECTOR=8081
+      - OPENAI_API_KEY=""
+    command: gunicorn --bind 0.0.0.0:8881 --workers=5 "app:run_app()"
+    ports:
+      - "8881:8881"
+    

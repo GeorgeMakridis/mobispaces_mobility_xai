@@ -1,0 +1,18 @@
+version: '3'
+
+services:
+
+  mobi-ui-demo:
+    container_name: mobi-ui-demo
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    restart: always
+    environment:
+      - HOST_XAI=http://192.168.1.8
+      - HOST_AI=http://192.168.1.8
+      - PORT_XAI=8881
+      - PORT_AI=8880
+    ports:
+      - 8501:8501
+      
