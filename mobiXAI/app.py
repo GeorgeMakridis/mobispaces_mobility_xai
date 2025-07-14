@@ -55,7 +55,7 @@ def run_app():
         col_list_case = col_lists[model_no]
         return explain_with_lime(bst_gpu, sid, index_input, col_list_case, model_no=model_no)
 
-    @app.route('/explanation_figure', methods=['GET'])
+    @app.route('/explanation_figure', methods=['POST'])
     def explanation_figure():
         data = is_json(request.data); as_image = 1
         if data[0] is False: return "Missing arguments.", 400
