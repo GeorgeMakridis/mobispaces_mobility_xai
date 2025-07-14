@@ -136,7 +136,7 @@ try:
         resp = requests.get(f"{XAI_URL}/explain?model={model_no}&sid={selected_tid}&index={instance_index}")  # TODO
         if resp.ok:
             explanation = resp.text
-            resp2 = requests.get(f"{XAI_URL}/explanation_figure", data=resp.text)  # TODO
+            resp2 = requests.post(f"{XAI_URL}/explanation_figure", data=resp.text)  # TODO
             if resp2.ok: col3.image(Image.open(io.BytesIO(resp2.content)))
             else: raise Exception()
         else: raise Exception()
