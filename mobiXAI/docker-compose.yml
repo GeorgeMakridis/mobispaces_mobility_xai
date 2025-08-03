@@ -12,6 +12,12 @@ services:
       - HOST_CONNECTOR=http://192.168.1.8
       - PORT_CONNECTOR=8081
       - OPENAI_API_KEY=""
+      - ANTHROPIC_API_KEY=""
+      - GOOGLE_API_KEY=""
+      - COHERE_API_KEY=""
+      - DEFAULT_LLM_PROVIDER=openai
+      - DEFAULT_LLM_MODEL=gpt-4-turbo-preview
+      - DEFAULT_LLM_TEMPERATURE=0.0
     command: gunicorn --bind 0.0.0.0:8881 --workers=5 "app:run_app()"
     ports:
       - "8881:8881"

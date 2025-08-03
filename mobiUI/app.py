@@ -141,9 +141,68 @@ try:
             else: raise Exception()
         else: raise Exception()
 
-    # Creating an expander
-    with col3.expander("Click here to expand and see more details from GPT-4"):
-        payload = json.dumps({"explanation": explanation})
-        resp = requests.post(f"{XAI_URL}/chat_response", data=payload)  # TODO
-        st.write(resp.text)
+    # Get available LLM providers
+    try:
+        resp = requests.get(f"{XAI_URL}/llm_providers")
+        if resp.ok:
+            llm_data = resp.json()
+            providers = llm_data["providers"]
+            default_provider = llm_data["default_provider"]
+            default_model = llm_data["default_model"]
+            default_temperature = llm_data["default_temperature"]
+        else:
+            providers = {"openai": {"available_models": ["gpt-4-turbo-preview"], "api_key_valid": False}}
+            default_provider = "openai"
+            default_model = "gpt-4-turbo-preview"
+            default_temperature = 0.0
+    except Exception:
+        providers = {"openai": {"available_models": ["gpt-4-turbo-preview"], "api_key_valid": False}}
+        default_provider = "openai"
+        default_model = "gpt-4-turbo-preview"
+        default_temperature = 0.0
+
+    # Creating an expander for LLM explanations
+    with col3.expander("Click here to expand and see more details from LLM"):
+        # Provider selection
+        available_providers = [p for p, info in providers.items() if info.get("api_key_valid", False)]
+        if not available_providers:
+            st.warning("No LLM providers with valid API keys found. Please configure API keys.")
+            available_providers = list(providers.keys())
+        
+        selected_provider = st.selectbox(
+            "Select LLM Provider:", 
+            options=available_providers,
+            index=available_providers.index(default_provider) if default_provider in available_providers else 0
+        )
+        
+        # Model selection
+        provider_info = providers.get(selected_provider, {})
+        available_models = provider_info.get("available_models", [])
+        default_model_for_provider = provider_info.get("default_model", available_models[0] if available_models else "")
+        
+        selected_model = st.selectbox(
+            "Select Model:", 
+            options=available_models,
+            index=available_models.index(default_model_for_provider) if default_model_for_provider in available_models else 0
+        )
+        
+        # Temperature slider
+        temperature = st.slider("Temperature:", min_value=0.0, max_value=2.0, value=float(default_temperature), step=0.1)
+        
+        # Max tokens slider
+        max_tokens = st.slider("Max Tokens:", min_value=100, max_value=4000, value=1000, step=100)
+        
+        if st.button("Generate LLM Explanation"):
+            payload = json.dumps({
+                "explanation": explanation,
+                "provider": selected_provider,
+                "model": selected_model,
+                "temperature": temperature,
+                "max_tokens": max_tokens
+            })
+            resp = requests.post(f"{XAI_URL}/chat_response", data=payload)
+            if resp.ok:
+                st.write(resp.text)
+            else:
+                st.error(f"Error: {resp.text}")
 except Exception: col3.write("There was a server error.")

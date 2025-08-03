@@ -6,15 +6,26 @@ import xgboost as xgb
 from flask import Flask, request, Response
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
-from openai import OpenAI
 import json
 import requests
 import os
+from llm_providers.factory import LLMFactory
 
+# Environment variables for LLM providers
 HOST_CONNECTOR = os.getenv("HOST_CONNECTOR")
 PORT_CONNECTOR = os.getenv("PORT_CONNECTOR")
 CONNECTOR_URL = f"{HOST_CONNECTOR}:{PORT_CONNECTOR}"
+
+# LLM API Keys
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
+ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY", "")
+COHERE_API_KEY = os.getenv("COHERE_API_KEY", "")
+
+# Default LLM settings
+DEFAULT_LLM_PROVIDER = os.getenv("DEFAULT_LLM_PROVIDER", "openai")
+DEFAULT_LLM_MODEL = os.getenv("DEFAULT_LLM_MODEL", "gpt-4-turbo-preview")
+DEFAULT_LLM_TEMPERATURE = float(os.getenv("DEFAULT_LLM_TEMPERATURE", "0.0"))
 
 
 def run_app():
@@ -208,18 +219,59 @@ def run_app():
 
         return fig
 
+    @app.route('/llm_providers', methods=['GET'])
+    def get_llm_providers():
+        """Get available LLM providers and their models"""
+        api_keys = {
+            "openai": OPENAI_API_KEY,
+            "anthropic": ANTHROPIC_API_KEY,
+            "google": GOOGLE_API_KEY,
+            "cohere": COHERE_API_KEY
+        }
+        
+        providers_info = LLMFactory.get_all_providers_info(api_keys)
+        
+        return {
+            "providers": providers_info,
+            "default_provider": DEFAULT_LLM_PROVIDER,
+            "default_model": DEFAULT_LLM_MODEL,
+            "default_temperature": DEFAULT_LLM_TEMPERATURE
+        }
+
     @app.route('/chat_response', methods=['POST'])
     def chat_response():
         data = is_json(request.data)
-        if data[0] is False: return "Missing arguments.", 400
-        else: expl = data[1]
-        return chat_response_func(expl)
+        if data[0] is False: 
+            return "Missing arguments.", 400
+        
+        # Get LLM parameters from request
+        request_data = data[1]
+        expl = request_data.get("explanation", "")
+        provider_name = request_data.get("provider", DEFAULT_LLM_PROVIDER)
+        model = request_data.get("model", DEFAULT_LLM_MODEL)
+        temperature = request_data.get("temperature", DEFAULT_LLM_TEMPERATURE)
+        max_tokens = request_data.get("max_tokens", 1000)
+        
+        return chat_response_func(expl, provider_name, model, temperature, max_tokens)
 
-    def chat_response_func(expl):
-        if expl != "2": return "Needs OPENAI API key", 200  # TODO
-        client = OpenAI(api_key=OPENAI_API_KEY)
-        chat_completion = client.chat.completions.create(
-            model='gpt-4-turbo-preview', temperature=0, n=1, messages=[
+    def chat_response_func(expl, provider_name="openai", model="gpt-4-turbo-preview", temperature=0.0, max_tokens=1000):
+        # Get API key for the provider
+        api_keys = {
+            "openai": OPENAI_API_KEY,
+            "anthropic": ANTHROPIC_API_KEY,
+            "google": GOOGLE_API_KEY,
+            "cohere": COHERE_API_KEY
+        }
+        
+        api_key = api_keys.get(provider_name)
+        if not api_key:
+            return f"Missing API key for provider: {provider_name}", 400
+        
+        try:
+            # Create provider and generate response
+            provider = LLMFactory.create_provider(provider_name, api_key)
+            
+            messages = [
                 {"role": "system",
                  "content": "You are an expert data scientist with a talent for presenting to non-experts the results "
                             "of an AI model for trajectory forecasting."},
@@ -239,10 +291,20 @@ def run_app():
                             "clarity, relevance, actionability, responsiveness, and user-specific customization, "
                             "creating a comprehensive and detailed approach to summarizing XAI insights. "
                             "The input = " + str(expl)
-                 },
+                 }
             ]
-        )
-        return chat_completion.choices[0].message.content, 200
+            
+            response = provider.generate_response(
+                messages=messages,
+                model=model,
+                temperature=temperature,
+                max_tokens=max_tokens
+            )
+            
+            return response, 200
+            
+        except Exception as e:
+            return f"Error generating response: {str(e)}", 500
 
     @app.route('/index_instances', methods=['GET'])
     def index_instances():
