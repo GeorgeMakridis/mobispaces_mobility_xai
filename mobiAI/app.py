@@ -100,7 +100,7 @@ def run_app():
                 model_no = arguments["model"]
                 if model_no not in ["a", "b"]: model_no = "a"
 
-        df = pd.read_pickle(f'mobi_data/model_{model_no}_data.pkl')
+        df = pd.read_pickle(f'/mobi_data/model_{model_no}_data.pkl')
         # # connector
         # data_url = f"{CONNECTOR_URL}/api/connector/csv/{model_no}"
         # response = requests.get(data_url)
@@ -151,6 +151,8 @@ def run_app():
         # Add a column to differentiate actual points from predictions
         sdf['pred_text'] = sdf['pred'].apply(lambda x: 'Prediction' if x == 1 else 'Actual')
         sdf = sdf[["index", "lon", "lat", "lh", "pred", "pred_text"]]
+        # Fix: Replace original index column with reset index to match explanation system
+        sdf['index'] = sdf.index
         if as_geojson == 0:
             return {"lat": sdf['lat'].mean(), "lon": sdf['lon'].mean(),
                     "actual_points": sdf[sdf['pred'] == 0].to_json(orient='split', index=False),
@@ -160,7 +162,7 @@ def run_app():
         for _, row in sdf.iterrows():
             feature = geojson.Feature(
                 geometry=geojson.Point((row["lon"], row["lat"])),
-                properties={"index": row["index"], "type": row["pred_text"],
+                properties={"index": row.name, "type": row["pred_text"],  # Fix: Use reset index instead of original index
                             "color": type_to_color[row["pred_text"]],
                             "marker-color": type_to_color[row["pred_text"]],
                             "longitude": row["lon"], "latitude": row["lat"]
