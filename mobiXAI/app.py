@@ -134,7 +134,7 @@ def run_app():
         :return: LIME explanation object.
         """
         # Now use 'filtered_samples' and 'filtered_feature_names' for generating LIME explanations
-        df = pd.read_pickle(f'mobi_data/model_{model_no}_data.pkl')
+        df = pd.read_pickle(f'/mobi_data/model_{model_no}_data.pkl')
         # # connector
         # data_url = f"{CONNECTOR_URL}/api/connector/csv/{model_no}"
         # response = requests.get(data_url)
@@ -317,7 +317,7 @@ def run_app():
             if "sid" not in arguments: return "Missing arguments.", 400
             selected_tid = int(arguments["sid"])
 
-        df = pd.read_pickle(f'mobi_data/model_{model_no}_data.pkl')
+        df = pd.read_pickle(f'/mobi_data/model_{model_no}_data.pkl')
         # # connector
         # data_url = f"{CONNECTOR_URL}/api/connector/csv/{model_no}"
         # response = requests.get(data_url)
